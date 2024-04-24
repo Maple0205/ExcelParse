@@ -1,0 +1,93 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.body {
+  display: block;
+}
+
+.input_container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  
+}
+
+.text_content {
+  width: 90%;
+  height: 60%;
+  border: solid 1px green;
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.text_content table {
+  width: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.text_content th, .text_content td {
+  min-width: 20px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.text_content tr {
+  height: 50px;
+}
+
+.text_content tr:nth-child(even){background-color: #f2f2f2;}
+
+.text_content tr:hover {background-color: #ddd;}
+
+.text_content tr:first-child{
+  font-weight: bolder;
+  text-align: center;
+  background-color: rgb(8, 160, 8);
+}
+
+.page_button {
+  margin-top: 20px;
+}
+
+.page {
+  margin: 10px;
+}
+
+.input_excel {
+  margin: auto;
+  margin-top: 20px;
+  align-self: center;
+}
+
+.parse_button {
+  margin: auto;
+}
+
+#drop_zone {
+  border: 2px dashed #0087F7;
+  border-radius: 5px;
+  min-width: 400px;
+  min-height: 200px;
+  text-align: center;
+  color: #0087F7;
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.highlight {
+  background-color: rgba(255, 255, 0, 0.5);
+}
+
