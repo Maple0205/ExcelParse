@@ -56,6 +56,12 @@ html, body {
 
 .page_button {
   margin-top: 20px;
+  background-color: rgb(8, 160, 8);
+  cursor: pointer;
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 0;
 }
 
 .page {
@@ -91,3 +97,39 @@ html, body {
   background-color: rgba(255, 255, 0, 0.5);
 }
 
+
+.button {
+  background-color: #007BFF;
+  cursor: pointer;
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.progress-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%; /* Full width */
+  background-color: #ddd; /* Light grey background */
+  padding: 1px; /* Some padding */
+  border-radius: 5px; /* Rounded corners */
+  text-align: center;
+}
+
+.progress-bar {
+  height: 20px; /* Specify the height of the bar */
+  background-color: #4CAF50; /* Green background */
+  width: 0%; /* Initial width of 0% */
+  border-radius: 1px; /* Rounded corners */
+  text-align: center; /* Center the text (if any) inside the bar */
+  color: white; /* White text color */
+  line-height: 20px; /* Center text vertically */
+}

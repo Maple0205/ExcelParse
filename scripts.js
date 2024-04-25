@@ -1,11 +1,14 @@
 
 var page_number = 0;
 var content = [];
+var allFiles = [];
+var sheets = [];
 
 const input_excel = document.getElementById("input_excel");
 const textContent = document.getElementById("text_content");
 const parse_button = document.getElementById("parse_button");
 const reset_button = document.getElementById("reset_button");
+const merge_button = document.getElementById("merge_button");
 const drop_zone = document.getElementById("drop_zone");
 const prev_page = document.getElementById("prev_page");
 const next_page = document.getElementById("next_page");
@@ -14,12 +17,16 @@ const page = document.getElementById("page");
 prev_page.addEventListener('click', handlePrevPage, false);
 next_page.addEventListener('click', handleNextPage, false);
 reset_button.addEventListener('click', handleReset, false);
+merge_button.addEventListener('click', handleMerge, false);
 
 function handleReset() {
   var dt = new DataTransfer();
+  content = [];
   input_excel.files = dt.files;
-  textContent.innerHTML = null;
+  textContent.innerHTML = content;
   page.innerHTML = null;
+  allFiles = [];
+  sheets = [];
   drop_zone.innerHTML = "Drag and drop files here";
 }
 
@@ -110,11 +117,11 @@ function calculateSize(numberOfBytes) {
   drop_zone.addEventListener(eventName, unhighlight, false);
 });
 
-function highlight(e) {
+function highlight() {
   drop_zone.classList.add('highlight');
 }
 
-function unhighlight(e) {
+function unhighlight() {
   drop_zone.classList.remove('highlight');
 }
 
@@ -122,20 +129,133 @@ parse_button.addEventListener('click', handleParse, false)
 
 function handleParse() {
   const file = input_excel.files[0];
-  if(file) {
+  if (file) {
+    const supportedTypes = ['xlsx', 'xls'];
+    const fileType = file.name.split('.').pop().toLowerCase();
+
+    if (!supportedTypes.includes(fileType)) {
+      alert("Unsupported file type. Please upload an Excel file.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, {type: 'array'});
-      workbook.SheetNames.forEach((sheetName)=>{
-        const worksheet = workbook.Sheets[sheetName];
-        // const json = XLSX.utils.sheet_to_json(worksheet);
-        const htmlstr = XLSX.utils.sheet_to_html(worksheet, {editable: false});
-        content.push(htmlstr);
-      })
-      page_number = 0;
-      page_function(page_number);
+      try {
+        const workbook = XLSX.read(data, {type: 'array'});
+        let i = 0;
+        const processSheet = () => {
+          if (i < workbook.SheetNames.length) {
+            const sheetName = workbook.SheetNames[i];
+            const worksheet = workbook.Sheets[sheetName];
+            if (worksheet["!ref"]) {
+              const htmlstr = XLSX.utils.sheet_to_html(worksheet, {editable: false});
+              content.push(htmlstr);
+            }
+            i++;
+            percentage = i/workbook.SheetNames.length;
+            progressBarFunc(percentage);  // Update progress
+            setTimeout(processSheet, 100); // Wait for 500 ms before processing the next sheet
+          } else {
+            // Once all sheets are processed
+            if (content.length > 0) {
+              page_function(page_number);
+              sheets.push(workbook.SheetNames.length);
+              allFiles.push(file);
+            } else {
+              alert("No data found in the Excel file.");
+            }
+          }
+        };
+        processSheet(); // Start processing
+      } catch (error) {
+        alert("Failed to parse the file: " + error.message);
+      }
+    };
+    reader.onerror = (e) => {
+      alert("Failed to read the file: " + reader.error);
     };
     reader.readAsArrayBuffer(file);
+  } else {
+    alert("Please select a file to parse.");
   }
+}
+
+
+function handleMerge() {
+  const fileList = allFiles;
+  if (!fileList.length) {
+    alert("No files selected.");
+    return;
+  }
+
+  let workbookOut = XLSX.utils.book_new();
+  let sheets_number = sheets.reduce((acc, val) => acc + val, 0);
+  let processedSheets = 0;
+
+  function processFile(file, index) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbookIn = XLSX.read(data, { type: 'array' });
+        let i = 0;
+        const processSheet = () => {
+          if (i < workbookIn.SheetNames.length) {
+            const sheetName = workbookIn.SheetNames[i];
+            const worksheet = workbookIn.Sheets[sheetName];
+            XLSX.utils.book_append_sheet(workbookOut, worksheet, `${sheetName}_${index}`);
+            processedSheets++;
+            let percentage = processedSheets / sheets_number;
+            progressBarFunc(percentage);  // Update progress
+            i++;
+            setTimeout(processSheet, 100);
+          } else {
+            resolve();
+          }
+        };
+        processSheet();
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function readFile(index) {
+    if (index >= fileList.length) {
+      XLSX.writeFile(workbookOut, "merged_output.xlsx");
+      return;
+    }
+    await processFile(fileList[index], index);
+    readFile(index + 1);
+  }
+  readFile(0);
+}
+
+
+function progressBarFunc(percentage) {
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBar = document.getElementById('progressBar');
+  const roundPercentage = Math.round(percentage * 100);
+
+  if (roundPercentage<100) {
+    removeHidden(progressContainer);
+    progressBar.style.width = roundPercentage + '%';
+    progressBar.innerHTML = roundPercentage + '%';
+  } else {
+    progressBar.style.width = '100%';
+    progressBar.innerHTML = '100%';
+    setTimeout(() => {
+      addHidden(progressContainer);
+      alert("Parse Success!");
+    }, 100);
+  }
+}
+
+function removeHidden(element) {
+  element.classList.remove('hidden');
+}
+
+function addHidden(element) {
+  element.classList.add('hidden');
 }
