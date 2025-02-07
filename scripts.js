@@ -259,3 +259,115 @@ function removeHidden(element) {
 function addHidden(element) {
   element.classList.add('hidden');
 }
+
+
+
+
+//switch tab
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(page => {
+      page.classList.add('inactive');
+  });
+  document.getElementById(pageId).classList.remove('inactive');
+}
+
+//convert
+const { jsPDF } = window.jspdf;
+
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const convertToPdfBtn = document.getElementById('convertToPdfBtn');
+const clearImageBtn = document.getElementById('clearImageBtn');
+
+imageInput.addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          imagePreview.src = e.target.result;
+          imagePreview.classList.remove('hidden');
+          convertToPdfBtn.disabled = false;
+          clearImageBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+  }
+});
+
+convertToPdfBtn.addEventListener('click', function() {
+  const img = imagePreview;
+  const pdf = new jsPDF();
+  const imgWidth = img.naturalWidth;
+  const imgHeight = img.naturalHeight;
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+
+  pdf.addImage(img.src, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+  pdf.save('converted.pdf');
+});
+
+clearImageBtn.addEventListener('click', function() {
+  imageInput.value = '';
+  imagePreview.src = '#';
+  imagePreview.classList.add('hidden');
+  convertToPdfBtn.disabled = true;
+  clearImageBtn.disabled = true;
+});
+
+const pdfInput = document.getElementById('pdfInput');
+const convertToImageBtn = document.getElementById('convertToImageBtn');
+const clearPdfBtn = document.getElementById('clearPdfBtn');
+const pdfPreview = document.getElementById('pdfPreview');
+
+pdfInput.addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (file) {
+      convertToImageBtn.disabled = false;
+      clearPdfBtn.disabled = false;
+  }
+});
+
+convertToImageBtn.addEventListener('click', function() {
+  const file = pdfInput.files[0];
+  if (file) {
+      const fileReader = new FileReader();
+      fileReader.onload = function() {
+          const typedarray = new Uint8Array(this.result);
+          renderPdfToImages(typedarray);
+      };
+      fileReader.readAsArrayBuffer(file);
+  }
+});
+
+clearPdfBtn.addEventListener('click', function() {
+  pdfInput.value = '';
+  pdfPreview.innerHTML = '';
+  convertToImageBtn.disabled = true;
+  clearPdfBtn.disabled = true;
+});
+
+function renderPdfToImages(data) {
+  pdfPreview.innerHTML = '';
+  pdfjsLib.getDocument(data).promise.then(pdf => {
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          pdf.getPage(pageNum).then(page => {
+              const scale = 1.5;
+              const viewport = page.getViewport({ scale });
+              const canvas = document.createElement('canvas');
+              const context = canvas.getContext('2d');
+              canvas.height = viewport.height;
+              canvas.width = viewport.width;
+
+              const renderContext = {
+                  canvasContext: context,
+                  viewport: viewport
+              };
+              page.render(renderContext).promise.then(() => {
+                  const img = document.createElement('img');
+                  img.src = canvas.toDataURL();
+                  img.classList.add('preview-img');
+                  pdfPreview.appendChild(img);
+              });
+          });
+      }
+  });
+}
